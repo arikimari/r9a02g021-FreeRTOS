@@ -58,6 +58,11 @@
 #define portasmHAS_MTIME                  1
 #define portasmADDITIONAL_CONTEXT_SIZE    0
 
+/* Constants to define the additional registers */
+#define mstackctrl                        0x7c0
+#define mstacklimit                       0x7c1
+
+
 .macro portasmSAVE_ADDITIONAL_REGISTERS
 /* No additional registers to save, so this macro does nothing. */
    .endm

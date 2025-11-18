@@ -51,7 +51,7 @@ int main(void)
     pins_initialize();
     trace_initialize();
     
-    trace_direct("\nr9a02g021 - FreeRTOS\n\n");
+    trace_direct("\nr9a02g021 - FreeRTOS\n\r\n");
     
     machine_timer_initialize();
     main_blinky();

@@ -136,7 +136,7 @@ definitions. */
  * Unlike other ports pxPortInitialiseStack() is written in assembly code as it
  * needs access to the portasmADDITIONAL_CONTEXT_SIZE constant.  The prototype
  * for the function is as per the other ports:
- * StackType_t *pxPortInitialiseStack( StackType_t *pxTopOfStack, TaskFunction_t pxCode, void *pvParameters );
+ * StackType_t *pxPortInitialiseStack( StackType_t *pxTopOfStack, StackType_t * pxEndOfStack, TaskFunction_t pxCode, void *pvParameters );
  *
  * As per the standard RISC-V ABI pxTopOfStack is passed in in a0, pxCode in
  * a1, and pvParameters in a2.  The new top of stack is passed out in a0.
@@ -162,6 +162,7 @@ definitions. */
  * where the global and thread pointers are currently assumed to be constant so
  * are not saved:
  *
+ * StackLimit
  * xCriticalNesting
  * x31
  * x30
@@ -198,6 +199,8 @@ definitions. */
  * pxCode
  */
 pxPortInitialiseStack:
+    addi a0, a0, -portWORD_SIZE         /* Space for stack limit. */
+    store_x a1, 0(a0)                   /* Store pxEndOfStack to stack limit */
     addi a0, a0, -portWORD_SIZE         /* Space for critical nesting count. */
     store_x x0, 0(a0)                   /* Critical nesting count starts at 0 for every task. */
 
@@ -206,7 +209,7 @@ pxPortInitialiseStack:
 #else
     addi a0, a0, -(22 * portWORD_SIZE)  /* Space for registers x10-x31. */
 #endif
-    store_x a2, 0(a0)                   /* Task parameters (pvParameters parameter) goes into register x10/a0 on the stack. */
+    store_x a3, 0(a0)                   /* Task parameters (pvParameters parameter) goes into register x10/a0 on the stack. */
 
     addi a0, a0, -(6 * portWORD_SIZE)   /* Space for registers x5-x9 + taskReturnAddress (register x1). */
     load_x t0, xTaskReturnAddress
@@ -246,13 +249,17 @@ chip_specific_stack_frame:              /* First add any chip specific registers
     store_x t0, 0(a0)                   /* mstatus onto the stack. */
 
     addi a0, a0, -portWORD_SIZE
-    store_x a1, 0(a0)                   /* mret value (pxCode parameter) onto the stack. */
+    store_x a2, 0(a0)                   /* mret value (pxCode parameter) onto the stack. */
     ret
 /*-----------------------------------------------------------*/
 
 xPortStartFirstTask:
     load_x  sp, pxCurrentTCB            /* Load pxCurrentTCB. */
     load_x  sp, 0( sp )                 /* Read sp from first TCB member. */
+
+    load_x  x5, portSTACK_LIMIT_OFFSET * portWORD_SIZE( sp )    /* Obtain stack limit value for this task from task's stack. */
+    csrw    mstacklimit, x5             /* Set stack limit  */
+    csrwi   mstackctrl, 0x08            /* Enable stack limit  */
 
     load_x  x1, 0( sp ) /* Note for starting the scheduler the exception return address is used as the function return address. */
 
@@ -361,13 +368,19 @@ freertos_risc_v_trap_handler:
 
 asynchronous_interrupt:
     store_x a1, 0( sp )                 /* Asynchronous interrupt so save unmodified exception return address. */
-    load_x sp, xISRStackTop             /* Switch to ISR stack. */
+    load_x t0, xISRStackTop             /* Load ISR stack */
+    load_x t1, xISRStackEnd             /* Load ISR stack end ptr */
+    mv sp, t0                           /* Switch to ISR stack */
+    csrw mstacklimit, t1                /* Set stack limit  */
     j handle_interrupt
 
 synchronous_exception:
     addi a1, a1, 4                      /* Synchronous so update exception return address to the instruction after the instruction that generated the exeption. */
     store_x a1, 0( sp )                 /* Save updated exception return address. */
-    load_x sp, xISRStackTop             /* Switch to ISR stack. */
+    load_x t0, xISRStackTop             /* Load ISR stack. */
+    load_x t1, xISRStackEnd             /* Load ISR stack end ptr */
+    mv sp, t0                           /* Switch to ISR stack. */
+    csrw mstacklimit, t1                /* Set stack limit  */
     j handle_exception
 
 handle_interrupt:

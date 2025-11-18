@@ -4,7 +4,6 @@ This repository provides a port of [FreeRTOS](https://www.freertos.org/index.htm
 for the Renesas R9A02G021 RISC-V Processor. It implements a simple
 demo derived from the FreeRTOS "blinky" demo applications.
 
-
 ## Features
 
 * Full FreeRTOS port
@@ -14,7 +13,11 @@ demo derived from the FreeRTOS "blinky" demo applications.
 * Support for UART trace
 * Support for assert
 * Support for exceptions
+* Support for HW based stack limit check
 
+## Supported HW
+
+FBF-R9A02G021 board
 
 ## How To Build
 
@@ -33,11 +36,19 @@ $ git clone --recurse-submodules https://github.com/akimari
 ```bash
 $ make
 ```
+4. Compiled blinker.elf is on build/ directory
 
 ## Porting Details
 
-The processor-specific FreeRTOS parts are configured by two files:
+The clock is configured to 32MHz.
+
+The FreeRTOS parts are configured:
 
 * `FreeRTOSConfig.h` (customize according to your needs)
-* `freertos_risc_v_chip_specific_extensions.h`
+
+## Debug
+
+UART trace port is UART0.
+This is /dev/tty on Linux dev env.
+
 

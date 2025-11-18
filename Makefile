@@ -16,8 +16,8 @@ SRCS        := \
 	FreeRTOS-Kernel/stream_buffer.c \
 	FreeRTOS-Kernel/tasks.c \
 	FreeRTOS-Kernel/timers.c \
-	FreeRTOS-Kernel/portable/GCC/RISC-V/port.c \
-	portASM.S \
+	portable/port.c \
+	portable/portASM.S \
 	FreeRTOS-Kernel/portable/MemMang/heap_4.c
 	
 SRCS        := $(SRCS:%=$(SRC_DIR)/%)
@@ -26,7 +26,7 @@ DEPS 	    := $(OBJS:.o=.d)
 
 
 CFLAGS      := --target=riscv32 -march=rv32imaczba_zbb_zbs -mabi=ilp32 -O0 -Wall -Wextra -Werror -MMD -MP -g -gdwarf-4 -ffunction-sections -fdata-sections
-CPPFLAGS    := -I . -I FreeRTOS-Kernel/include -I FreeRTOS-Kernel/portable/GCC/RISC-V
+CPPFLAGS    := -I . -I FreeRTOS-Kernel/include -I portable/
 LDFLAGS     := -e _PowerON_Reset -Wl,-Map=$(BUILD_DIR)/blinker.map -Wl,--cref
 LD_SCRIPT   := -T linker_script.ld
 

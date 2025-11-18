@@ -114,7 +114,8 @@ SECTIONS
 	.stack 0x20007000 (NOLOAD) :
 	{
 		PROVIDE(__stack = .);
-		ASSERT((__stack > (end + __stack_size)), "Error: Too much data - no room left for the stack");
+		PROVIDE(__freertos_irq_stack_start = (__stack - __stack_size));
+		ASSERT(__freertos_irq_stack_start > end, "Error: Too much data - no room left for the stack");
 		PROVIDE(__freertos_irq_stack_top = .);
 	} >RAM
 
